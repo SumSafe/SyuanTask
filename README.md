@@ -71,7 +71,7 @@ SyuanTask 把这条链路完整自动化了：
 ### 方式二：源码运行
 
 ```bash
-git clone https://github.com/<your-name>/SyuanTask.git
+git clone https://github.com/SumSafe/SyuanTask.git
 cd SyuanTask
 pip install -r requirements.txt
 python src/app.py
