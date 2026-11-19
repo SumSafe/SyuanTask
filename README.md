@@ -11,6 +11,7 @@
 [![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D4?logo=windows&logoColor=white)](#)
 [![Playwright](https://img.shields.io/badge/Powered%20by-Playwright-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
+[![Release](https://img.shields.io/github/v/release/SumSafe/SyuanTask?color=2EA44F&label=release)](https://github.com/SumSafe/SyuanTask/releases/latest)
 [![License](https://img.shields.io/badge/License-MIT-2EA44F)](LICENSE)
 
 </div>
@@ -62,11 +63,12 @@ SyuanTask 把这条链路完整自动化了：
 
 ### 方式一：直接跑 exe（目标机器无需 Python）
 
-1. 下载 `SyuanTask.exe`
+1. 到 [Releases](https://github.com/SumSafe/SyuanTask/releases/latest) 下载 `SyuanTask.exe`（约 104MB）
 2. 放到一个**可写**目录（配置会存在 exe 同目录的 `config.json`）
 3. 双击，等 5～10 秒，浏览器自动打开控制台
 
 > 单文件 exe 首次启动需要解包，慢是正常的；没有代码签名，SmartScreen 会提示「未知发布者」，选「更多信息 → 仍要运行」。
+> 下载慢可以用 `gh release download` 或换用源码方式运行，功能完全一致。
 
 ### 方式二：源码运行
 
