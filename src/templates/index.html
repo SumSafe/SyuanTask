@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SyuanTask · 校企E站自动登录</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" href="/logo.png" />
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --line: #e5e9f2;
+    --text: #1c2333;
+    --muted: #6b7688;
+    --primary: #2f6bff;
+    --primary-dark: #1f52d6;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --err: #dc2626;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 8px 24px -12px rgba(16, 24, 40, .18);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 40px; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .logo {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, #2f6bff, #6b9bff);
+    display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 18px;
+    box-shadow: 0 6px 18px -8px rgba(47, 107, 255, .8);
+  }
+  h1 { font-size: 19px; margin: 0; letter-spacing: .3px; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+  .badge {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 13px; border-radius: 999px; background: #eceff6; color: #475069;
+    font-size: 12.5px; font-weight: 600;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #9aa4b8; }
+  .badge.running { background: #eaf1ff; color: var(--primary-dark); }
+  .badge.running .dot { background: var(--primary); animation: pulse 1.1s infinite; }
+  .badge.success { background: #e9f8ef; color: #14713b; }
+  .badge.success .dot { background: var(--ok); }
+  .badge.failed { background: #fdecec; color: #a51b1b; }
+  .badge.failed .dot { background: var(--err); }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+
+  .grid { display: grid; grid-template-columns: 420px 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 940px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 20px;
+  }
+  .card h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted);
+    margin: 0 0 16px; font-weight: 700;
+  }
+  .field { margin-bottom: 15px; position: relative; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; color: #475069; margin-bottom: 6px; }
+  input[type=text], input[type=password], input[type=number] {
+    width: 100%; height: 42px; padding: 0 13px; border: 1px solid var(--line);
+    border-radius: 10px; background: #fbfcfe; color: var(--text); font-size: 14px;
+    outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  textarea, select {
+    width: 100%; padding: 9px 13px; border: 1px solid var(--line); border-radius: 10px;
+    background: #fbfcfe; color: var(--text); font-size: 13.5px; outline: none;
+    font-family: inherit; resize: vertical; transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  textarea:focus, select:focus { border-color: #a9c2ff; background: #fff; box-shadow: 0 0 0 3px rgba(47,107,255,.12); }
+  input:focus { border-color: #a9c2ff; background: #fff; box-shadow: 0 0 0 3px rgba(47,107,255,.12); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .tag {
+    display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+    background: #eef1f7; color: #7b869b; font-size: 11px; font-weight: 600;
+    vertical-align: 1px;
+  }
+  .tag.ok { background: #e9f8ef; color: #14713b; }
+  .link-btn {
+    height: auto; padding: 0; margin-top: 8px; border: 0; background: none;
+    color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  .link-btn:hover:not(:disabled) { color: #a51b1b; background: none; }
+
+  .combo { position: relative; }
+  .combo input { padding-right: 42px; }
+  .combo-toggle {
+    position: absolute; right: 5px; top: 5px; width: 32px; height: 32px;
+    border: 0; border-radius: 8px; background: #eef2fa; color: #55617a;
+    font-size: 13px; line-height: 1; cursor: pointer; padding: 0;
+  }
+  .combo-toggle:hover:not(:disabled) { background: #e2e9f8; color: var(--primary-dark); }
+
+  .combo-list {
+    position: absolute; z-index: 30; top: 46px; left: 0; right: 0; max-height: 258px; overflow-y: auto;
+    background: #fff; border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 16px 32px -18px rgba(16,24,40,.4); padding: 5px; display: none;
+  }
+  .combo-list.show { display: block; }
+  .combo-list div { padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 13.5px; }
+  .combo-list div:hover, .combo-list div.active { background: #eef3ff; color: var(--primary-dark); }
+  .combo-list div.current { font-weight: 700; color: var(--primary-dark); }
+  .combo-list div.current::after { content: " ✓"; font-size: 12px; }
+  .combo-list .empty { color: var(--muted); cursor: default; }
+
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475069; margin: 4px 0 18px; }
+  .check input { width: 15px; height: 15px; accent-color: var(--primary); }
+
+  button {
+    height: 44px; border: 0; border-radius: 10px; font-size: 14.5px; font-weight: 600;
+    cursor: pointer; transition: transform .06s, filter .15s, background .15s;
+    font-family: inherit;
+  }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: #fff; width: 100%; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+  .btn-ghost { background: #f1f4fa; color: #3b4356; }
+  .btn-ghost:hover:not(:disabled) { background: #e7ecf7; }
+  .btn-danger { background: #fdecec; color: #a51b1b; }
+  .btn-danger:hover:not(:disabled) { background: #fbdcdc; }
+  .actions { display: flex; gap: 10px; margin-bottom: 10px; }
+  .actions .btn-ghost, .actions .btn-danger { flex: 1; }
+
+  .approve-box {
+    margin: 0 0 18px; padding: 13px 14px; border-radius: 12px;
+    background: #fbfcfe; border: 1px dashed #d6deef;
+  }
+  .approve-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .approve-head input { width: 15px; height: 15px; accent-color: var(--primary); }
+  .approve-head label { font-size: 13px; font-weight: 600; color: #3b4356; margin: 0; }
+  .approve-box .mini { gap: 10px; }
+  .approve-box .hint { margin-top: 9px; line-height: 1.5; }
+
+  details { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }  details summary { cursor: pointer; font-size: 12.5px; color: var(--muted); font-weight: 600; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary { margin-bottom: 12px; }
+  .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mini .span2 { grid-column: 1 / -1; }
+  .mini label { font-size: 12px; }
+  .mini input { height: 36px; }
+
+  /* 右侧 */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .step {
+    display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px;
+    border-radius: 999px; border: 1px solid var(--line); background: #fbfcfe;
+    font-size: 12.5px; color: var(--muted); white-space: nowrap;
+  }
+  .step i {
+    width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+    background: #e9edf6; color: #7b869b; font-size: 10px; font-style: normal; font-weight: 700;
+  }
+  .step.active { border-color: #b9cdff; background: #eef4ff; color: var(--primary-dark); font-weight: 600; }
+  .step.active i { background: var(--primary); color: #fff; }
+  .step.done { border-color: #bfe6cd; background: #edfaf1; color: #14713b; }
+  .step.done i { background: var(--ok); color: #fff; }
+  .step.final { grid-column: 1 / -1; justify-content: center; font-weight: 600; }
+
+  .cap-box {
+    display: none; gap: 14px; align-items: center; padding: 12px; border-radius: 12px;
+    background: #fbfcfe; border: 1px solid var(--line); margin-bottom: 14px;
+  }
+  .cap-box.show { display: flex; }
+  .cap-box img { height: 46px; border-radius: 6px; background: #fff; border: 1px solid var(--line); }
+  .cap-meta { font-size: 13px; }
+  .cap-meta b { font-size: 15px; color: var(--primary-dark); }
+  .cap-meta span { color: var(--muted); }
+
+  .console {
+    height: 452px; overflow-y: auto; border-radius: 12px; background: #fbfcfe;
+    border: 1px solid var(--line); padding: 10px 12px; font-size: 12.8px;
+    font-family: "Cascadia Mono", Consolas, "JetBrains Mono", monospace;
+  }
+  .line { display: flex; gap: 9px; padding: 3px 0; align-items: flex-start; }
+  .line time { color: #9aa4b8; flex: 0 0 auto; font-size: 11.5px; padding-top: 1px; }
+  .line em { flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; margin-top: 7px; background: #b3bccd; }
+  .line .msg { word-break: break-word; color: #333c50; }
+  .line.ok em { background: var(--ok); }
+  .line.ok .msg { color: #14713b; }
+  .line.warn em { background: var(--warn); }
+  .line.warn .msg { color: #91500a; }
+  .line.err em { background: var(--err); }
+  .line.err .msg { color: #a51b1b; }
+  .line.step em { background: var(--primary); }
+  .line.step .msg { color: var(--primary-dark); font-weight: 600; }
+  .console .placeholder { color: #9aa4b8; }
+
+  .intern-link {
+    display: none; margin-top: 12px; padding: 10px 13px; border-radius: 10px;
+    background: #edfaf1; border: 1px solid #bfe6cd; color: #14713b;
+    font-size: 12.8px; text-decoration: none; word-break: break-all;
+  }
+  .intern-link.show { display: block; }
+  .intern-link span { font-weight: 600; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 34px; transform: translate(-50%, 24px);
+    background: #1c2333; color: #fff; padding: 11px 18px; border-radius: 10px;
+    font-size: 13.5px; opacity: 0; pointer-events: none; transition: all .22s; z-index: 99;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.err { background: #a51b1b; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">校</div>
+    <div>
+      <h1>SyuanTask · 校企E站自动登录</h1>
+      <p>单位 / 账号本地加密保存，验证码由本地模型识别后自动回填</p>
+    </div>
+    <div class="badge" id="badge"><span class="dot"></span><span id="badge-text">待命</span></div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>登录配置</h2>
+
+      <div class="field">
+        <label for="unit">单位（学校）</label>
+        <div class="combo">
+          <input type="text" id="unit" autocomplete="off" placeholder="点右侧▾选全部，或直接输入关键字搜索" />
+          <button class="combo-toggle" id="unit-toggle" type="button" title="展开全部单位">▾</button>
+          <div class="combo-list" id="unit-list"></div>
+        </div>
+        <div class="hint" id="unit-hint">共 <span id="unit-count">0</span> 个可选单位，可直接搜索</div>
+      </div>
+
+      <div class="field">
+        <label for="account">账号</label>
+        <input type="text" id="account" autocomplete="off" placeholder="登录账号" />
+      </div>
+
+      <div class="field">
+        <label for="password">密码 <span class="tag" id="pwd-tag">未保存</span></label>
+        <input type="password" id="password" autocomplete="off" placeholder="登录密码" />
+        <div class="hint" id="pwd-hint">填写后可点「保存配置」加密保存在本机</div>
+        <button class="link-btn" id="btn-clear-pwd" type="button">清除已保存密码</button>
+      </div>
+
+      <div class="check">
+        <input type="checkbox" id="remember" checked />
+        <label for="remember" style="margin:0;font-weight:400">保存账号密码到本地（DPAPI 加密）</label>
+      </div>
+
+      <div class="actions">
+        <button class="btn-ghost" id="btn-save">保存配置</button>
+        <button class="btn-ghost" id="btn-refresh">刷新单位</button>
+      </div>
+      <button class="btn-primary" id="btn-login">开始自动登录</button>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn-danger" id="btn-stop" disabled>停止</button>
+        <button class="btn-ghost" id="btn-close">关闭浏览器</button>
+      </div>
+
+      <div class="approve-box">
+        <div class="approve-head">
+          <input type="checkbox" id="approve_enabled" checked />
+          <label for="approve_enabled">自动批阅全部待批阅周志</label>
+        </div>
+        <div class="mini">
+          <div>
+            <label for="approve_score">分数</label>
+            <input type="text" id="approve_score" value="99" />
+          </div>
+          <div>
+            <label for="approve_comment">评语</label>
+            <input type="text" id="approve_comment" value="加油" />
+          </div>
+        </div>
+        <div class="hint">逐篇点「通过审批」→ 填分数/评语 → 确定提交，一篇一篇来。真实写入，不可撤销。</div>
+        <div class="field" style="margin:12px 0 0">
+          <label for="score_overrides">指定学生分数（每行一个，姓名=分数）</label>
+          <textarea id="score_overrides" rows="3" placeholder="张三=100&#10;李四=95"></textarea>
+          <div class="hint">命中姓名的学生用指定分数，其余用上面的默认分数；评语统一。</div>
+        </div>
+      </div>
+
+      <details>
+        <summary>高级设置</summary>
+        <div class="mini">
+          <div>
+            <label for="max_attempts">最多尝试次数</label>
+            <input type="number" id="max_attempts" min="1" max="20" value="6" />
+          </div>
+          <div>
+            <label for="min_conf">识别置信度下限</label>
+            <input type="number" id="min_conf" step="0.05" min="0" max="1" value="0.35" />
+          </div>
+          <div class="span2">
+            <label for="intern_text">登录后要点击的入口文字</label>
+            <input type="text" id="intern_text" value="实习平台" placeholder="实习平台" />
+          </div>
+          <div>
+            <label for="approve_delay">每篇之间间隔(毫秒)</label>
+            <input type="number" id="approve_delay" min="0" max="10000" step="100" value="800" />
+          </div>
+          <div>
+            <label for="browser">浏览器</label>
+            <select id="browser">
+              <option value="auto">自动（优先 Chrome）</option>
+              <option value="chrome">只用 Google Chrome</option>
+              <option value="msedge">只用 Microsoft Edge</option>
+            </select>
+          </div>
+          <div>
+            <label for="viewport_w">页面视口宽</label>
+            <input type="number" id="viewport_w" min="1024" max="3840" step="10" value="1440" />
+          </div>
+          <div>
+            <label for="viewport_h">页面视口高</label>
+            <input type="number" id="viewport_h" min="680" max="2160" step="10" value="900" />
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>执行过程</h2>
+      <div class="steps" id="steps"></div>
+
+      <div class="cap-box" id="cap-box">
+        <img id="cap-img" alt="验证码" />
+        <div class="cap-meta">
+          <div>识别：<b id="cap-text">-</b> → 答案 <b id="cap-answer">-</b></div>
+          <div><span>置信度 <span id="cap-conf">-</span></span></div>
+        </div>
+      </div>
+
+      <div class="console" id="console"><div class="placeholder">日志将在这里实时输出…</div></div>
+      <a class="intern-link" id="intern-link" href="#" target="_blank" rel="noreferrer">
+        已打开实习平台：<span></span>
+      </a>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const UNITS = {{ units|tojson }};
+const $ = (id) => document.getElementById(id);
+let running = false;
+let timer = null;
+let hasSavedPwd = false;
+
+/* ---------- 单位下拉 ---------- */
+const unitInput = $("unit");
+const unitList = $("unit-list");
+let unitActive = -1;
+
+function renderUnitList(keyword) {
+  const kw = (keyword || "").trim();
+  const items = (kw ? UNITS.filter(u => u.includes(kw)) : UNITS).slice(0, 200);
+  unitActive = -1;
+  unitList.innerHTML = "";
+  if (!items.length) {
+    unitList.innerHTML = '<div class="empty">没有匹配的单位，可点「刷新单位」重新拉取</div>';
+  } else {
+    items.forEach(u => {
+      const d = document.createElement("div");
+      d.textContent = u;
+      if (u === unitInput.value.trim()) d.classList.add("current");
+      d.onmousedown = (e) => { e.preventDefault(); pickUnit(u); };
+      unitList.appendChild(d);
+    });
+  }
+  unitList.classList.add("show");
+  // 让已选中的那一项滚进可视区
+  const cur = unitList.querySelector(".current");
+  if (cur) cur.scrollIntoView({ block: "nearest" });
+  $("unit-hint").innerHTML = kw
+    ? `匹配 <b>${items.length}</b> 个（共 ${UNITS.length} 个），↑↓ 选择，回车确认`
+    : `共 ${UNITS.length} 个可选单位，输入关键字可搜索`;
+}
+function pickUnit(u) {
+  unitInput.value = u;
+  unitList.classList.remove("show");
+  unitInput.blur();
+  $("unit-hint").innerHTML = `已选择：<b>${u}</b>`;
+}
+function toggleUnitList() {
+  if (unitList.classList.contains("show")) {
+    unitList.classList.remove("show");
+    return;
+  }
+  renderUnitList("");   // 展开时永远显示全部
+  unitInput.focus();
+}
+$("unit-toggle").addEventListener("mousedown", (e) => { e.preventDefault(); toggleUnitList(); });
+unitInput.addEventListener("focus", () => renderUnitList(""));   // 聚焦显示全部，不再拿现值当过滤词
+unitInput.addEventListener("input", () => renderUnitList(unitInput.value));
+unitInput.addEventListener("blur", () => setTimeout(() => unitList.classList.remove("show"), 120));
+unitInput.addEventListener("keydown", (e) => {
+  const opts = [...unitList.querySelectorAll("div")];
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!unitList.classList.contains("show")) renderUnitList(unitInput.value);
+    const list = [...unitList.querySelectorAll("div")];
+    if (!list.length) return;
+    unitActive = e.key === "ArrowDown"
+      ? Math.min(unitActive + 1, list.length - 1)
+      : Math.max(unitActive - 1, 0);
+    list.forEach((el, i) => el.classList.toggle("active", i === unitActive));
+    list[unitActive].scrollIntoView({ block: "nearest" });
+  } else if (e.key === "Enter") {
+    const list = [...unitList.querySelectorAll("div")];
+    if (unitList.classList.contains("show") && list.length) {
+      e.preventDefault();
+      pickUnit(list[Math.max(unitActive, 0)].textContent);
+    }
+  } else if (e.key === "Escape") {
+    unitList.classList.remove("show");
+  }
+});
+
+/* ---------- 提示 ---------- */
+let toastTimer = null;
+function toast(msg, isErr) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.className = "toast show" + (isErr ? " err" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (el.className = "toast"), 2600);
+}
+
+/* ---------- 请求 ---------- */
+async function post(url, body) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  return res.json().catch(() => ({ ok: false, error: "响应解析失败" }));
+}
+
+/* ---------- 状态渲染 ---------- */
+function renderSteps(state) {
+  const box = $("steps");
+  box.innerHTML = "";
+  state.steps.forEach((name, i) => {
+    const idx = i + 1;
+    const el = document.createElement("div");
+    el.className = "step";
+    if (idx === state.steps.length && state.steps.length % 3 === 1) el.classList.add("final");
+    if (state.result === "success" || idx < state.step) el.classList.add("done");
+    else if (idx === state.step && (state.running || state.result === "failed")) el.classList.add("active");
+    el.innerHTML = `<i>${idx}</i><span>${name}</span>`;
+    box.appendChild(el);
+  });
+}
+
+function renderConsole(logs) {
+  const box = $("console");
+  if (!logs.length) {
+    if (!box.querySelector(".placeholder")) {
+      box.innerHTML = '<div class="placeholder">日志将在这里实时输出…</div>';
+    }
+    return;
+  }
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+  box.innerHTML = "";
+  logs.forEach(l => {
+    const d = document.createElement("div");
+    d.className = "line " + (l.level || "");
+    const time = document.createElement("time");
+    time.textContent = l.t;
+    const em = document.createElement("em");
+    const msg = document.createElement("div");
+    msg.className = "msg";
+    msg.textContent = l.msg;
+    d.append(time, em, msg);
+    box.appendChild(d);
+  });
+  if (nearBottom) box.scrollTop = box.scrollHeight;
+}
+
+function renderBadge(state) {
+  const badge = $("badge");
+  const text = $("badge-text");
+  const map = {
+    running: ["running", "执行中"],
+    success: ["success", "登录成功"],
+    failed: ["failed", "失败"],
+    stopped: ["failed", "已停止"],
+    idle: ["", "待命"],
+  };
+  const [cls, label] = map[state.result] || map.idle;
+  badge.className = "badge " + cls;
+  text.textContent = state.running
+    ? (state.step_text || "执行中")
+    : label;
+}
+
+function renderCaptcha(cap) {
+  const box = $("cap-box");
+  if (!cap) { box.classList.remove("show"); return; }
+  box.classList.add("show");
+  $("cap-img").src = cap.image;
+  $("cap-text").textContent = cap.text || "-";
+  $("cap-answer").textContent = cap.answer || "-";
+  $("cap-conf").textContent = (cap.confidence ?? 0).toFixed(2);
+}
+
+function renderIntern(url) {
+  const el = $("intern-link");
+  if (!url) { el.classList.remove("show"); return; }
+  el.classList.add("show");
+  el.href = url;
+  el.querySelector("span").textContent = url;
+}
+
+function applyState(state, config) {
+  running = state.running;
+  $("btn-login").disabled = running;
+  $("btn-stop").disabled = !running;
+  $("btn-save").disabled = running;
+  $("btn-refresh").disabled = running;
+  renderBadge(state);
+  renderSteps(state);
+  renderConsole(state.logs);
+  renderCaptcha(state.captcha);
+  renderIntern(state.intern_url);
+  if (config) renderPasswordState(config.has_password);
+  if (running && !timer) timer = setInterval(poll, 900);
+  if (!running && timer) { clearInterval(timer); timer = null; }
+}
+
+async function poll() {
+  try {
+    const data = await (await fetch("/api/state")).json();
+    applyState(data.state, data.config);
+  } catch (e) { /* 忽略瞬时错误 */ }
+}
+
+/* ---------- 动作 ---------- */
+function formValues() {
+  return {
+    unit: unitInput.value.trim(),
+    account: $("account").value.trim(),
+    password: $("password").value,
+    remember: $("remember").checked,
+    max_attempts: $("max_attempts").value,
+    min_confidence: $("min_conf").value,
+    intern_text: $("intern_text").value.trim() || "实习平台",
+    approve_enabled: $("approve_enabled").checked,
+    approve_score: $("approve_score").value.trim() || "99",
+    approve_comment: $("approve_comment").value,
+    approve_delay: $("approve_delay").value,
+    score_overrides: $("score_overrides").value,
+    browser: $("browser").value,
+    viewport_w: $("viewport_w").value,
+    viewport_h: $("viewport_h").value,
+  };
+}
+
+function renderPasswordState(has) {
+  hasSavedPwd = !!has;
+  const tag = $("pwd-tag");
+  const input = $("password");
+  const hint = $("pwd-hint");
+  if (has) {
+    tag.textContent = "已保存";
+    tag.className = "tag ok";
+    input.placeholder = "已保存加密密码，留空则沿用";
+    hint.textContent = "密码已用 Windows DPAPI 加密写入 config.json，换电脑或换用户读不出来";
+    $("btn-clear-pwd").style.display = "";
+  } else {
+    tag.textContent = "未保存";
+    tag.className = "tag";
+    input.placeholder = "登录密码";
+    hint.textContent = "填写后可点「保存配置」加密保存在本机";
+    $("btn-clear-pwd").style.display = "none";
+  }
+}
+
+$("btn-save").onclick = async () => {
+  const v = formValues();
+  const btn = $("btn-save");
+  const r = await post("/api/config", v);
+  if (r.ok) {
+    if (v.password) $("password").value = "";
+    btn.textContent = "已保存 ✓";
+    setTimeout(() => (btn.textContent = "保存配置"), 1400);
+    toast("配置已保存" + (v.remember ? "（密码已加密保存）" : "（未勾选保存密码，密码未落盘）"));
+    poll();
+  } else {
+    toast(r.error || "保存失败", true);
+  }
+};
+
+$("btn-clear-pwd").onclick = async () => {
+  const v = formValues();
+  const r = await post("/api/config", { unit: v.unit, account: v.account, remember: false, clear_password: true });
+  if (r.ok) {
+    $("password").value = "";
+    $("remember").checked = false;
+    toast("已清除本机保存的密码");
+    poll();
+  } else {
+    toast(r.error || "清除失败", true);
+  }
+};
+
+$("btn-login").onclick = async () => {
+  const v = formValues();
+  if (!v.unit) return toast("请选择单位", true);
+  if (!v.account) return toast("请填写账号", true);
+  if (!v.password && !hasSavedPwd) return toast("请填写密码（或先点「保存配置」存一个）", true);
+  if (v.approve_enabled) {
+    let ask = "即将逐个通过所有待批阅周志：\n\n分数：" + v.approve_score +
+              "\n评语：" + v.approve_comment;
+    if (v.score_overrides.trim()) ask += "\n\n指定分数：\n" + v.score_overrides.trim();
+    ask += "\n\n这是真实提交，审批后不可撤销。继续吗？";
+    if (!window.confirm(ask)) return;
+  }
+  const r = await post("/api/login", { ...v, save: true });
+  if (!r.ok) return toast(r.error || "启动失败", true);
+  toast("已启动，正在打开浏览器…");
+  $("password").value = "";
+  if (!timer) timer = setInterval(poll, 900);
+  poll();
+};
+
+$("btn-stop").onclick = async () => { await post("/api/stop"); toast("已请求停止"); poll(); };
+
+$("btn-close").onclick = async () => { await post("/api/close-browser"); toast("已关闭自动化浏览器"); poll(); };
+
+$("btn-refresh").onclick = async () => {
+  toast("正在从站点刷新单位列表…");
+  const r = await post("/api/units/refresh");
+  if (r.ok) { UNITS.length = 0; UNITS.push(...r.units); $("unit-hint").innerHTML = `共 <b>${r.count}</b> 个可选单位，输入关键字可搜索`; toast("单位列表已更新：" + r.count + " 个"); }
+  else toast(r.error || "刷新失败", true);
+};
+
+/* ---------- 初始化 ---------- */
+(function init() {
+  $("unit-hint").innerHTML = `共 <b>${UNITS.length}</b> 个可选单位，点右侧 ▾ 展开，或直接输入关键字搜索`;
+  unitInput.value = {{ config.unit|tojson }};
+  $("account").value = {{ config.account|tojson }};
+  $("remember").checked = {{ "true" if config.remember else "false" }};
+  const st = {{ (config.settings or {})|tojson }};
+  if (st.max_attempts) $("max_attempts").value = st.max_attempts;
+  if (st.min_confidence != null) $("min_conf").value = st.min_confidence;
+  if (st.intern_text) $("intern_text").value = st.intern_text;
+  if (st.approve_enabled != null) $("approve_enabled").checked = !!st.approve_enabled;
+  if (st.approve_score) $("approve_score").value = st.approve_score;
+  if (st.approve_comment != null) $("approve_comment").value = st.approve_comment;
+  if (st.approve_delay != null) $("approve_delay").value = st.approve_delay;
+  if (st.score_overrides) $("score_overrides").value = st.score_overrides;
+  if (st.browser) $("browser").value = st.browser;
+  if (st.viewport_w) $("viewport_w").value = st.viewport_w;
+  if (st.viewport_h) $("viewport_h").value = st.viewport_h;
+  renderPasswordState({{ "true" if config.password else "false" }});
+  poll();
+})();
+</script>
+</body>
+</html>

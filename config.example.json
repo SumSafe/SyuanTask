@@ -1,0 +1,23 @@
+{
+  "unit": "重庆安全技术职业学院",
+  "account": "",
+  "remember": true,
+  "password": "",
+  "settings": {
+    "url": "https://syuantech.cn/login_1?redirect=%2FcontrolBoard%7D",
+    "max_attempts": 6,
+    "min_confidence": 0.35,
+    "slow_mo": 120,
+    "headless": false,
+    "intern_text": "实习平台",
+    "approve_enabled": false,
+    "approve_score": "99",
+    "approve_comment": "加油",
+    "approve_delay": 800,
+    "approve_limit": 200,
+    "score_overrides": "",
+    "browser": "auto",
+    "viewport_w": 1440,
+    "viewport_h": 900
+  }
+}
